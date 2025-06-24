@@ -1,4 +1,4 @@
-Request url: /api/v1/movers/movers/search-available-rides/
+Request url: /api/v1/movers/movers/search/
 
 Request parameters:
 	booking_time, booking_type, pickup, dropoff location, vehicle preferences

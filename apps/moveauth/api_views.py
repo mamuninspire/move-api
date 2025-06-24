@@ -7,7 +7,7 @@ from rest_framework import status
 from .serializers import UserSerializer, UserRegistrationSerializer
 from django.contrib.auth.models import Group
 from django.contrib.auth import get_user_model
-from apps.mover.models import Mover, Driver
+from apps.mover.models import Mover
 from apps.customer.models import Customer
 
 User = get_user_model()
@@ -42,8 +42,7 @@ class UserViewSet(viewsets.ModelViewSet):
             # Create user respective profile Mover/Customer
             try:
                 if user.account_type == "MOVER":
-                    driver = Driver.objects.create(user=user)
-                    Mover.objects.create(driver=driver)
+                    Mover.objects.create(user=user)
                 elif user.account_type == "CUSTOMER":
                     Customer.objects.create(user=user)
             except Exception as e:

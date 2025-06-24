@@ -43,7 +43,7 @@ urlpatterns = [
     # path('api/v1/', include('apps.mover.urls')),
     
     path('api/v1/', include('apps.moveauth.urls')),
-    path('api/v1/', include('apps.mover.urls')),
+    path('api/v1/movers/', include('apps.mover.urls')),
     path('api/v1/bookings/', include('apps.booking.urls')),
     path('api/v1/customers/', include('apps.customer.urls')),
 
