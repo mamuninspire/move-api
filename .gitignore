@@ -1,0 +1,15 @@
+# directories to be hidden
+.venv
+**/__pycache__
+public/*
+media/*
+staticfiles/*
+logs/*
+data/*
+
+
+# Files to be hidden
+.env
+**/*.pyc
+debug*
+
