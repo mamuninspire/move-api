@@ -31,7 +31,7 @@ class VehicleBodyStyleAdmin(admin.ModelAdmin):
 
 @admin.register(ServiceType)
 class ServiceTypeAdmin(admin.ModelAdmin):
-    list_display = ('name',)
+    list_display = ('name', 'alias', 'description')
     search_fields = ('name',)
 
 

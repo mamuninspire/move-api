@@ -12,9 +12,9 @@ User = get_user_model()
 
 class VehicleType(models.Model):
     name = models.CharField(max_length=50, unique=True)
-    icon = models.CharField(max_length=15, blank=True, null=True)
-    iconcolor = models.CharField(max_length=20, blank=True, null=True)
-    bgcolor = models.CharField(max_length=20, blank=True, null=True)
+    icon = models.CharField(max_length=30, blank=True, null=True)
+    iconcolor = models.CharField(max_length=30, blank=True, null=True)
+    bgcolor = models.CharField(max_length=30, blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -59,6 +59,7 @@ class VehicleBodyStyle(models.Model):
 
 class ServiceType(models.Model):
     name = models.CharField(max_length=50, unique=True)
+    alias = models.CharField(max_length=50, blank=True, null=True)
     description = models.TextField(max_length=200, blank=True, null=True)
 
     def __str__(self):
@@ -70,7 +71,7 @@ class ServiceType(models.Model):
 
 
 class Vehicle(CommonModel):
-    license_plate = models.CharField(max_length=20, unique=True)
+    license_plate = models.CharField(max_length=50, unique=True)
     make = models.ForeignKey(VehicleMake, on_delete=models.CASCADE)
     model = models.CharField(max_length=50)
     year = models.PositiveSmallIntegerField(blank=True, null=True)
@@ -106,7 +107,7 @@ class Vehicle(CommonModel):
     
 
     def __str__(self):
-        return f"{self.make.name} ({self.year})"
+        return f"{self.license_plate}"
     
     def get_image_urls(self):
         if hasattr(self, 'vehicle_images'):

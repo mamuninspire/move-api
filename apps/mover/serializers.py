@@ -39,17 +39,6 @@ class ServiceTypeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class VehicleSerializer(serializers.ModelSerializer):
-    make = VehicleMakeSerializer()
-    vehicle_type = VehicleTypeSerializer()
-    body_style = VehicleBodyStyleSerializer()
-    service_types = ServiceTypeSerializer(many=True)
-
-    class Meta:
-        model = Vehicle
-        fields = '__all__'
-
-
 class VehicleWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vehicle
@@ -59,21 +48,23 @@ class VehicleWriteSerializer(serializers.ModelSerializer):
 class VehicleImagesSerializer(serializers.ModelSerializer):
     class Meta:
         model = VehicleImages
-        fields = '__all__'
+        fields = ['image_1', 'image_2', 'image_3', 'image_4', 'uploaded_at']
+
+
 
 
 class DocumentTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = DocumentType
-        fields = '__all__'
+        fields = ['id', 'name']
 
 
 class DocumentsSerializer(serializers.ModelSerializer):
-    doc_type = DocumentTypeSerializer()
+    doc_type = DocumentTypeSerializer()  # nested doc_type info
 
     class Meta:
         model = Documents
-        fields = '__all__'
+        fields = ['id', 'doc', 'doc_type', 'uploaded_at']
 
 
 class DocumentsWriteSerializer(serializers.ModelSerializer):
@@ -95,6 +86,19 @@ class VehicleSummarySerializer(serializers.ModelSerializer):
         fields = ['license_plate', 'make', 'model', 'year', 'color']
 
 
+class VehicleSerializer(serializers.ModelSerializer):
+    make = VehicleMakeSerializer()
+    vehicle_type = VehicleTypeSerializer()
+    body_style = VehicleBodyStyleSerializer()
+    service_types = ServiceTypeSerializer(many=True)
+    vehicle_images = VehicleImagesSerializer(read_only=True)
+    driver_documents = DocumentsSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Vehicle
+        fields = '__all__'
+
+        
 class MoverSearchSerializer(serializers.ModelSerializer):
     vehicle = VehicleSummarySerializer(read_only=True)
     class Meta:

@@ -57,6 +57,19 @@ class VehicleViewSet(viewsets.ModelViewSet):
             return VehicleWriteSerializer
         return VehicleSerializer
     
+    @action(detail=False, methods=['get'], url_path='my')
+    def my_vehicle(self, request):
+        try:
+            mover = Mover.objects.get(user=request.user)
+        except Mover.DoesNotExist:
+            return Response({"detail": "You are not a registered mover."}, status=404)
+
+        if not mover.vehicle:
+            return Response({"detail": "No vehicle assigned to your profile."}, status=404)
+
+        serializer = self.get_serializer(mover.vehicle)
+        return Response(serializer.data)
+    
     def create(self, request, *args, **kwargs):
         # pdb.set_trace()
         # Extract data from request

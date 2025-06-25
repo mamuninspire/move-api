@@ -11,9 +11,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         User = get_user_model()
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         group = Group.objects.get(name="Mover")
-        with open("data/demo_drivers.json") as f:
+        with open("data/demo_movers.json") as f:
             users = json.load(f)
             for user in users:
                 print(f"email: {user['email']}")

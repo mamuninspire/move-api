@@ -12,6 +12,7 @@ TRANSMISSION_TYPE = (
     ("cvt", "CVT")
 )
 
+
 COMMON_STATUS = (
     ('active', 'Active'),
     ('inactive', 'Inactive'),
@@ -30,6 +31,7 @@ DURATION_TYPE_CHOICES = [
 
 SERVICE_STATUS = (
     ("available", "Available"),
+    ("in_service", "In Service"),
     ("busy", "Busy"),
     ("off_service", "Off Service")
 )

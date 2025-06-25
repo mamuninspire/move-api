@@ -10,7 +10,7 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
             'id',
             'email',
             'first_name',
-            'last_name'
+            'last_name',
             'account_type',
             'is_mover',
             'is_customer',
