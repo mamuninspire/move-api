@@ -4,9 +4,9 @@ from .models import RideSearch, RideRequestToMover, Ride, Booking, ParcelDeliver
 
 @admin.register(RideSearch)
 class RideSearchAdmin(admin.ModelAdmin):
-    list_display = ('user', 'pickup_location', 'dropoff_location', 'eco_ride')
+    list_display = ('customer', 'pickup_location', 'dropoff_location', 'eco_ride')
     list_filter = ('booking_time', 'booking_type', 'eco_ride', 'vehicle_type')
-    search_fields = ('user__email', 'vehicle_type__name', 'vehicle_make__name', 'vehicle_model__name')
+    search_fields = ('customer__user__email', 'vehicle_type__name', 'vehicle_make__name', 'vehicle_model__name')
 
 
 @admin.register(RideRequestToMover)
@@ -16,7 +16,7 @@ class RideRequestToMoverAdmin(admin.ModelAdmin):
         'proposed_price', 'agreed_price', 'status'
     )
     list_filter = ('status',)
-    search_fields = ('ride_search__user__email', 'mover__driver__user__email')
+    search_fields = ('ride_search__customer__user__email', 'mover__driver__user__email')
 
 
 @admin.register(Ride)

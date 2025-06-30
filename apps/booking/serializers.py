@@ -4,6 +4,11 @@ from core.models import Comment  # if your Comment model is located there
 
 
 class RideSearchSerializer(serializers.ModelSerializer):
+    customer = serializers.PrimaryKeyRelatedField(read_only=True)  # or nested serializer if you want
+    vehicle_type = serializers.StringRelatedField()
+    vehicle_make = serializers.StringRelatedField()
+    vehicle_model = serializers.StringRelatedField()
+
     class Meta:
         model = RideSearch
         fields = '__all__'

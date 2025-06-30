@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
 from apps.mover.models import VehicleType, VehicleMake, VehicleModel, Mover
+from apps.customer.models import Customer
 from core.models import CommonModel, Comment
 from django.contrib.auth import get_user_model
 from core.const import DURATION_TYPE_CHOICES, DELIVERY_STATUS
@@ -30,13 +31,13 @@ class BookingAbs(CommonModel):
 
 
 class RideSearch(BookingAbs):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ride_searches')
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='ride_searches')
     vehicle_preferences = models.JSONField(default=dict)
     vehicle_type = models.ForeignKey(VehicleType, on_delete=models.SET_NULL, null=True)
     vehicle_make = models.ForeignKey(VehicleMake, on_delete=models.SET_NULL, null=True)
     vehicle_model = models.ForeignKey(VehicleModel, on_delete=models.SET_NULL, null=True)
     eco_ride = models.BooleanField(default=False)
-    status = models.CharField(max_length=15, choices=(("new_search", "New Search"), ("accepted", "Accepted"), ("confirmed", "Confirmed"), ("rejected", "Rejected")))
+    status = models.CharField(max_length=15, choices=(("new_search", "New Search"), ("accepted", "Accepted"), ("confirmed", "Confirmed"), ("rejected", "Rejected")), default="new_search")
 
 
 class RideRequestToMover(models.Model):

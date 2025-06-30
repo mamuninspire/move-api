@@ -15,9 +15,10 @@ from .serializers import (
     VehicleSerializer, VehicleWriteSerializer,
     VehicleImagesSerializer, DocumentTypeSerializer,
     DocumentsSerializer, DocumentsWriteSerializer,
-    MoverSerializer, MoverSearchSerializer
+    MoverSerializer, MoverSearchSerializer, MoverProfileSerializer
 )
 from core.utils import get_distance_duration
+from decimal import Decimal
 import asyncio
 import os
 import pdb; 
@@ -122,6 +123,14 @@ class VehicleViewSet(viewsets.ModelViewSet):
         mover = Mover.objects.get(user=request.user)
         mover.vehicle = vehicle
         mover.is_vehicle_added = True
+
+        if 'ride' in service_type_names:
+            mover.is_rider = True
+        if 'plant_hire' in service_type_names:
+            mover.is_plant_hire = True
+        if 'delivery' in service_type_names:
+            mover.is_parcel_delivery = True
+
         mover.save()
 
         return Response(VehicleSerializer(vehicle).data, status=status.HTTP_201_CREATED)
@@ -223,10 +232,46 @@ class MoverViewSet(viewsets.ModelViewSet):
     serializer_class = MoverSearchSerializer
     permission_classes = [IsAuthenticated]
 
+    def retrieve(self, request, *args, **kwargs):
+        mover_id = self.kwargs.get('pk')
+
+        try:
+            mover = Mover.objects.get(mover_id=mover_id)
+        except Mover.DoesNotExist:
+            return Response({"detail": "Mover not found."}, status=404)
+
+        serializer = MoverProfileSerializer(mover)
+
+        # You could add extra custom data if needed
+        data = serializer.data
+        # data['extra_info'] = "Some extra data if you like"
+
+        return Response(data)
+
+    def update(self, request, *args, **kwargs):
+        mover_id = self.kwargs.get('pk')
+
+        try:
+            mover = Mover.objects.get(pk=mover_id)
+        except Mover.DoesNotExist:
+            return Response({"detail": "Mover not found."}, status=404)
+
+        # Example: Allow users to update only their own mover profile
+        if mover.user != request.user:
+            return Response({"detail": "You do not have permission to update this mover."}, status=403)
+
+        serializer = self.get_serializer(mover, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data, status=200)
+
+
+
     @action(detail=False, methods=['post'], url_path='search-available-rides')
     def search_available_rides(self, request):
         """
-        POST /api/movers/search-available-rides/
+        POST /api/v1/movers/search-available-rides/
         {
             "pickup_location": {
                 "title": "DohaInspire Management Training Centre",
@@ -238,10 +283,11 @@ class MoverViewSet(viewsets.ModelViewSet):
                 "lat": 25.278579420428017,
                 "lang": 51.53200106872503
             },
-            "booking_time": "now",
+            "booking_time": "book_now",
             "pickup_date": "2025-06-25",
             "pickup_time": "15:30",
             "booking_type": "Reservation",
+            "eco_friendly": "false",
             "vehicle_preferences": {
                 "vehicle_type": "Van",
                 "vehicle_make": "Toyota",
@@ -252,26 +298,12 @@ class MoverViewSet(viewsets.ModelViewSet):
         # pdb.set_trace()
         data = request.data
 
-        service_name = data.get("service_type")
-
         # Step 1: Filter Mover based on is_online and service_type
-        movers = Mover.objects.filter(is_online=True, vehicle__service_types__name__iexact=service_name).select_related("vehicle")
+        movers = Mover.objects.filter(is_online=True, is_rider=True).select_related("vehicle")
 
         # Step 2: Apply vehicle filters
-        vehicle_prefs = data.get("vehicle_preferences", {})
-        vehicle_type = vehicle_prefs.get("vehicle_type")
-        vehicle_make = vehicle_prefs.get("vehicle_make")
-        vehicle_model = vehicle_prefs.get("vehicle_model")
-
-        if movers:
-            if vehicle_type:
-                movers = movers.filter(vehicle__vehicle_type__name__iexact=vehicle_type)
-
-            if vehicle_make:
-                movers = movers.filter(vehicle__make__name__iexact=vehicle_make)
-
-            if vehicle_model:
-                movers = movers.filter(vehicle__model__iexact=vehicle_model)
+        
+        # b 
         
         # Step 3: Sort by distance, rate and rating
         if movers:
@@ -280,13 +312,13 @@ class MoverViewSet(viewsets.ModelViewSet):
             dropoff = data.get("dropoff_location")
             booking_type = data.get("booking_type")
 
-            api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
+            
             try:
-                result = get_distance_duration(pickup, dropoff, api_key)
-                distance = result['distance_meters']//1000
+                
                 search_results = []
                 for driver in movers:
                     search_data = {}
+                    search_data['mover_id'] = driver.mover_id
                     search_data['driver_name'] = driver.user.get_full_name()
                     search_data['rating'] = driver.rating
                     search_data['phone'] = driver.get_contact
@@ -297,14 +329,37 @@ class MoverViewSet(viewsets.ModelViewSet):
                     search_data['available'] = driver.available
                     search_data['image'] = driver.vehicle.get_hero_image_url()
 
-                    search_data['estimated_cost'] = driver.vehicle.rate_per_km * distance
+                    if booking_type == "reservation":
+                        duration_type = data.get("duration_type") if data.get("duration_type") else None
+                        # duration = data.get("duration") if data.get("duration") else 1
+
+                        if duration_type == "DAY":
+                            est = driver.vehicle.rate_per_day
+                            search_data['estimated_cost'] = est
+                        else:
+                            est = driver.vehicle.rate_per_hour
+                            search_data['estimated_cost'] = est
+
+                    elif booking_type == "single":
+                        api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
+                        result = get_distance_duration(pickup, dropoff, api_key)
+                        print(result)
+                        distance = result['distance_meters']/1000
+                        search_data['estimated_cost'] = round(driver.vehicle.rate_per_km * Decimal(str(distance)), 2)
+                    else:
+                        search_data['estimated_cost'] = 100
+                    
+                    search_data['duration_type'] = duration_type
+
                     search_results.append(search_data)
                     
 
             except Exception as e:
                 print(e)
 
-            movers = movers.order_by('rating')
+            # movers = movers.order_by('rating')
+            # pdb.set_trace()
+        
 
         # Step 3: Optional pickup time validation
         booking_time = data.get("booking_time")

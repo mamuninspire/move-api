@@ -4,6 +4,7 @@ from .models import (
     ServiceType, Vehicle, VehicleImages, 
     DocumentType, Documents, Mover
 )
+from apps.moveauth.serializers import UserSerializer
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -101,6 +102,16 @@ class VehicleSerializer(serializers.ModelSerializer):
         
 class MoverSearchSerializer(serializers.ModelSerializer):
     vehicle = VehicleSummarySerializer(read_only=True)
+    user = UserSerializer(read_only=True)
+    class Meta:
+        model = Mover
+        fields = '__all__'
+
+
+class MoverProfileSerializer(serializers.ModelSerializer):
+    vehicle = VehicleSummarySerializer(read_only=True)
+    user = UserSerializer(read_only=True)
+    
     class Meta:
         model = Mover
         fields = '__all__'

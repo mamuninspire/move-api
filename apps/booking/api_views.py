@@ -1,8 +1,9 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.exceptions import NotAuthenticated
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import action, permission_classes
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 from .models import RideSearch, RideRequestToMover, Ride, ParcelDelivery, ParcelType, Booking
 from .serializers import (
     RideSearchSerializer,
@@ -12,24 +13,35 @@ from .serializers import (
     ParcelTypeSerializer,
     BookingSerializer
 )
+import pdb
 
 
 class RideSearchViewSet(viewsets.ModelViewSet):
     queryset = RideSearch.objects.all()
     serializer_class = RideSearchSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        pdb.set_trace()
+        customer = getattr(self.request.user, 'customer_profile', None)
+        if not customer:
+            raise PermissionDenied("You must have a customer profile to create a ride search.")
+        serializer.save(customer=customer)
+    
+    def create(self, request, *args, **kwargs):
+        pdb.set_trace()
+        return Response({"message": "Hello World!"})
 
     def get_queryset(self):
-        return RideSearch.objects.filter(user=self.request.user)
+        # Allow users to see only their own ride searches
+        user = self.request.user
+        return RideSearch.objects.filter(customer__user=user)
 
 
 class RideRequestToMoverViewSet(viewsets.ModelViewSet):
     queryset = RideRequestToMover.objects.all()
     serializer_class = RideRequestToMoverSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         # Optionally filter by user or mover, assuming relationships exist
