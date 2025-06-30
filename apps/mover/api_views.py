@@ -71,8 +71,10 @@ class VehicleViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     def create(self, request, *args, **kwargs):
-        # pdb.set_trace()
         # Extract data from request
+        if request.user.mover.vehicle:
+            return Response({"message": "Vehicle alread added. You can only add one vehicle"})
+        
         data = request.data.copy()
         errors = {}
 
@@ -85,7 +87,8 @@ class VehicleViewSet(viewsets.ModelViewSet):
         try:
             data['vehicle_type'] = VehicleType.objects.get(name=request.data.get('vehicle_type')).id
         except VehicleType.DoesNotExist:
-            errors['vehicle_type'] = "Invalid vehicle type"
+            data['vehicle_type'] = VehicleType.objects.get(name__icontains="other").id
+            # errors['vehicle_type'] = "Invalid vehicle type"
 
         body_style_name = request.data.get('body_style')
         if body_style_name:
@@ -117,11 +120,83 @@ class VehicleViewSet(viewsets.ModelViewSet):
 
         #  Assign vehicle to mover
         mover = Mover.objects.get(user=request.user)
-        mover.vechicle = vehicle
+        mover.vehicle = vehicle
         mover.is_vehicle_added = True
         mover.save()
 
         return Response(VehicleSerializer(vehicle).data, status=status.HTTP_201_CREATED)
+    
+    def update(self, request, *args, **kwargs):
+        try:
+            mover = Mover.objects.get(user=request.user)
+        except Mover.DoesNotExist:
+            return Response({"detail": "You are not a registered mover."}, status=404)
+
+        if not mover.vehicle:
+            return Response({"detail": "No vehicle assigned to your profile to update."}, status=404)
+
+        vehicle = mover.vehicle
+
+        data = request.data.copy()
+        errors = {}
+
+        if 'make' in data:
+            try:
+                data['make'] = VehicleMake.objects.get(name=data['make']).id
+            except VehicleMake.DoesNotExist:
+                errors['make'] = "Invalid make"
+
+        if 'vehicle_type' in data:
+            try:
+                data['vehicle_type'] = VehicleType.objects.get(name=data['vehicle_type']).id
+            except VehicleType.DoesNotExist:
+                errors['vehicle_type'] = "Invalid vehicle type"
+
+        if 'body_style' in data:
+            try:
+                data['body_style'] = VehicleBodyStyle.objects.get(name=data['body_style']).id
+            except VehicleBodyStyle.DoesNotExist:
+                errors['body_style'] = "Invalid body style"
+
+        if errors:
+            return Response({"errors": errors}, status=400)
+
+        if 'service_types' in data:
+            service_types = ServiceType.objects.filter(name__in=data['service_types'])
+            if not service_types:
+                return Response({"service_types": "At least one valid service type is required."}, status=400)
+            else:
+                ids = list(service_types.values_list('id', flat=True))
+                data['service_types'] = ids
+
+        serializer = self.get_serializer(vehicle, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        updated_vehicle = serializer.save()
+
+        if 'service_types' in data:
+            updated_vehicle.service_types.set(data['service_types'])
+
+        return Response(VehicleSerializer(updated_vehicle).data, status=200)
+        
+    def destroy(self, request, *args, **kwargs):
+        try:
+            mover = Mover.objects.get(user=request.user)
+        except Mover.DoesNotExist:
+            return Response({"detail": "You are not a registered mover."}, status=404)
+
+        vehicle_id = self.kwargs.get('pk')
+        if str(mover.vehicle.id) != str(vehicle_id):
+            return Response({"detail": "You are not allowed to delete this vehicle."}, status=403)
+
+        vehicle = mover.vehicle
+
+        mover.vehicle = None
+        mover.is_vehicle_added = False
+        mover.save()
+
+        vehicle.delete()
+
+        return Response({"detail": "Vehicle deleted successfully."}, status=204)
 
 
 class VehicleImagesViewSet(viewsets.ModelViewSet):

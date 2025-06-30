@@ -17,4 +17,5 @@ class Command(BaseCommand):
             if not mover.vehicle:
                 vehicle = vechicles.pop()
                 mover.vehicle = vehicle
+                mover.is_vehicle_added = True
                 mover.save()

@@ -51,7 +51,7 @@ class VehicleAdmin(admin.ModelAdmin):
 @admin.register(Mover)
 class MoverAdmin(admin.ModelAdmin):
     list_display = (
-        'mover_id', 'is_online', 'is_available',
+        'mover_id', 'user__email', 'is_online', 'is_available',
         'is_rider', 'is_parcel_delivery', 'is_plant_hire', 'rating'
     )
     list_filter = ('is_online', 'is_available', 'is_rider', 'is_parcel_delivery', 'is_plant_hire')
