@@ -10,12 +10,13 @@ from .api_views import (
 )
 
 router = DefaultRouter()
-router.register('', BookingViewSet)
-router.register('rides', RideViewSet)
-router.register('ride-searches', RideSearchViewSet)
-router.register('ride-requests', RideRequestToMoverViewSet)
-router.register('parcel-types', ParcelTypeViewSet)
-router.register('parcel-deliveries', ParcelDeliveryViewSet)
+
+router.register(r'rides', RideViewSet)
+router.register(r'ride-searches', RideSearchViewSet)
+router.register(r'ride-requests', RideRequestToMoverViewSet)
+router.register(r'parcel-types', ParcelTypeViewSet)
+router.register(r'parcel-deliveries', ParcelDeliveryViewSet)
+router.register(r'', BookingViewSet)
 
 
 urlpatterns = [

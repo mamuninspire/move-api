@@ -18,4 +18,4 @@ class Customer(CommonModel):
     is_whatsapp_verified = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"Customer Profile for {self.user.email}"
+        return f"{self.user.email}"

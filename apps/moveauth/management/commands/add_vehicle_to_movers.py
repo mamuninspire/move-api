@@ -18,6 +18,8 @@ class Command(BaseCommand):
             if not mover.vehicle:
                 vehicle = vechicles.pop()
                 mover.vehicle = vehicle
+                mover.is_available = True
+                mover.is_online = True
                 mover.is_vehicle_added = True
                 services = list(vehicle.service_types.values_list("name", flat=True))
                 if 'ride' in services:

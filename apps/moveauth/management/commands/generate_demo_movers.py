@@ -17,7 +17,17 @@ class Command(BaseCommand):
             users = json.load(f)
             for user in users:
                 print(f"email: {user['email']}")
-                mover = User.objects.create_user(email=user['email'], password=user['password'], account_type="MOVER", first_name=user['first_name'], last_name=user['last_name'])
+                mover = User.objects.create_user(
+                    email=user['email'], 
+                    password=user['password'], 
+                    account_type="MOVER", 
+                    first_name=user['first_name'], 
+                    last_name=user['last_name'],
+                    dob=user['dob'],
+                    gender=user['gender']
+                )
                 mover.groups.add(group)
-                Mover.objects.create(user=mover)
+                mover = Mover.objects.create(user=mover)
+                mover.driving_licence_number = user['driving_licence_number']
+                mover.save()
 

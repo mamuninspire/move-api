@@ -16,15 +16,13 @@ class BookingAbs(CommonModel):
     pickup_location = models.JSONField(default=dict)
     dropoff_location = models.JSONField(default=dict)
 
-    booking_time = models.CharField(max_length=1, choices=((0, "Book Now"), (1, "Book for Later")), default=0)
+    booking_time = models.CharField(max_length=10, choices=(("now", "Book Now"), ("later", "Book for Later")), default="now")
     pickup_date = models.DateField(blank=True, null=True)
     pickup_time = models.TimeField(blank=True, null=True)
 
-    booking_type = models.CharField(max_length=1, choices=((0, "Single Ride"), (1, "Reservation")), default=0)
+    booking_type = models.CharField(max_length=15, choices=(("single", "Single Ride"), ("reservation", "Reservation")), default="single")
     duration = models.PositiveIntegerField(blank=True, null=True)
     duration_type = models.CharField(max_length=4, choices=DURATION_TYPE_CHOICES, blank=True, null=True)
-
-    # Add QR code for each booking
 
     class Meta:
         abstract = True
@@ -37,7 +35,24 @@ class RideSearch(BookingAbs):
     vehicle_make = models.ForeignKey(VehicleMake, on_delete=models.SET_NULL, null=True)
     vehicle_model = models.ForeignKey(VehicleModel, on_delete=models.SET_NULL, null=True)
     eco_ride = models.BooleanField(default=False)
-    status = models.CharField(max_length=15, choices=(("new_search", "New Search"), ("accepted", "Accepted"), ("confirmed", "Confirmed"), ("rejected", "Rejected")), default="new_search")
+    status = models.CharField(max_length=15, choices=(("new_search", "New Search"), ("send_requesat", "Send Request"), ("accepted", "Accepted"), ("confirmed", "Confirmed"), ("rejected", "Rejected")), default="new_search")
+
+    def __str__(self):
+        return str(self.id)
+    
+    @property
+    def get_user(self):
+        return self.customer.user
+
+    @property
+    def pickup_location_title(self):
+        title = self.pickup_location['title']
+        return title
+    
+    @property
+    def dropoff_location_title(self):
+        title = self.dropoff_location['title']
+        return title
 
 
 class RideRequestToMover(models.Model):
@@ -46,8 +61,14 @@ class RideRequestToMover(models.Model):
     estimated_cost = models.DecimalField(max_digits=8, decimal_places=2, default=0.0)
     proposed_price = models.DecimalField(max_digits=8, decimal_places=2, default=0.0)
     agreed_price = models.DecimalField(max_digits=8, decimal_places=2, default=0.0)
-    status = models.CharField(max_length=15, choices=(("pending", "Pending Request"), ("accepted", "Accepted"), ("confirmed", "Confirmed"), ("rejected", "Rejected"), ("expired", "Expired")))
+    status = models.CharField(max_length=15, choices=(("pending", "Pending Request"), ("accepted", "Accepted"), ("confirmed", "Confirmed"), ("rejected", "Rejected"), ("expired", "Expired")), default="pending")
     comments = GenericRelation(Comment)
+
+    class Meta:
+        unique_together = ('ride_search', 'mover')
+
+    def __str__(self):
+        return str(self.id)
 
 
 class Ride(models.Model):
@@ -57,6 +78,9 @@ class Ride(models.Model):
     status = models.CharField(max_length=15, choices=(("confirmed", "Confirmed"), ("pickedup", "Picked Up"), ("moving", "Moving"), ("dropedoff", "Droped Off"), ("issue", "Issue")))
     rating = models.PositiveSmallIntegerField(default=5)
     bookings = GenericRelation('Booking')
+
+    def __str__(self):
+        return str(self.ride_id)
 
     @property
     def pickup_date(self):
