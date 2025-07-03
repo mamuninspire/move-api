@@ -11,10 +11,28 @@ class RideSearchSerializer(serializers.ModelSerializer):
     vehicle_type = serializers.StringRelatedField()
     vehicle_make = serializers.StringRelatedField()
     vehicle_model = serializers.StringRelatedField()
+    pickup_date = serializers.DateField(required=False, allow_null=True)
+    pickup_time = serializers.TimeField(required=False, allow_null=True)
+    duration = serializers.IntegerField(required=False, allow_null=True)
 
     class Meta:
         model = RideSearch
         fields = '__all__'
+    
+    def validate_pickup_date(self, value):
+        if value == '':
+            return None
+        return value
+
+    def validate_pickup_time(self, value):
+        if value == '':
+            return None
+        return value
+
+    def validate_duration(self, value):
+        if value == '':
+            return None
+        return value
     
     def create(self, validated_data):
         vehicle_preferences = validated_data.get('vehicle_preferences', {})

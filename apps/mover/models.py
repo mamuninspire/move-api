@@ -110,6 +110,11 @@ class Vehicle(CommonModel):
     def __str__(self):
         return f"{self.license_plate}"
     
+    @property
+    def get_vehicle_type(self):
+        return self.vehicle_type.name if self.vehicle_type else None
+
+    
     def get_image_urls(self):
         if hasattr(self, 'vehicle_images'):
             images = self.vehicle_images
@@ -217,6 +222,14 @@ class Mover(models.Model):
     @property
     def get_vehicle_model(self):
         return self.vehicle.model
+    
+    @property
+    def get_vehicle_color(self):
+        return self.vehicle.color
+    
+    @property
+    def get_vehicle_type(self):
+        return self.vehicle.get_vehicle_type
     
     @property
     def capacity(self):

@@ -17,7 +17,12 @@ from .serializers import (
 from apps.mover.models import Mover
 from apps.customer.models import Customer
 from core.utils import get_distance_duration
+from dotenv import load_dotenv
+import os
+from decimal import Decimal
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
+load_dotenv()
 import pdb
 
 
@@ -32,6 +37,7 @@ class RideSearchViewSet(viewsets.ModelViewSet):
     serializer_class = RideSearchSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
+    api_key = os.getenv("GOOGLE_MAPS_API_KEY")
 
     def get_queryset(self):
         # pdb.set_trace()
@@ -52,20 +58,35 @@ class RideSearchViewSet(viewsets.ModelViewSet):
         serializer.save(customer=customer)
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        data = request.data
+        print(f"===== data=====")
+        print(data)
+        
+        if data.get("booking_time") == 'now':
+            data.pop("pickup_date")
+            data.pop("pickup_time")
+        
+        booking_type = data.get('booking_type')
+        if booking_type == 'single':
+            duration_type = data.pop("duration_type")
+            duration = data.pop("duration")
+        else:
+            duration_type = data.get('duration_type')
+        
+        serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
 
         ride_search_id = serializer.data.get('id')
-        booking_type = request.data.get('booking_type')
-        duration_type = request.data.get('duration_type')
-        pickup = request.data.get("pickup_location")
-        dropoff = request.data.get("dropoff_location")
+        pickup = data.get("pickup_location")
+        dropoff = data.get("dropoff_location")
+        distance_result = get_distance_duration(pickup, dropoff, self.api_key)
+        # pdb.set_trace()
 
-        movers = Mover.objects.filter(is_online=True, is_rider=True).select_related("vehicle")
-
+        movers = Mover.objects.filter(is_online=True, is_rider=True).select_related("vehicle", "user")
         search_results = []
-        for driver in movers:
+        def process_driver(driver):
+            """Process single driver and return data dict"""
             driver_data = {
                 'ride_search_id': ride_search_id,
                 'mover_id': driver.mover_id,
@@ -75,21 +96,23 @@ class RideSearchViewSet(viewsets.ModelViewSet):
                 'license': driver.driving_licence_number,
                 'make': driver.get_vehicle_make.name if driver.get_vehicle_make else None,
                 'model': driver.get_vehicle_model,
+                'color': driver.get_vehicle_color,
+                "vehicle_type": driver.get_vehicle_type,
                 'capacity': driver.capacity,
                 'available': driver.available,
                 'image': driver.vehicle.get_hero_image_url() if driver.vehicle else None,
-                'duration_type': duration_type
+                'duration_type': duration_type,
+                'estimated_cost': None
             }
 
-            # Calculate estimated cost
+            # Estimate cost
             if booking_type == "reservation" and driver.vehicle:
-                if duration_type == "DAY":
-                    driver_data['estimated_cost'] = driver.vehicle.rate_per_day
-                else:
-                    driver_data['estimated_cost'] = driver.vehicle.rate_per_hour
+                driver_data['estimated_cost'] = (
+                    driver.vehicle.rate_per_day if duration_type == "DAY"
+                    else driver.vehicle.rate_per_hour
+                )
+
             elif booking_type == "single" and driver.vehicle:
-                api_key = getattr(settings, "GOOGLE_MAPS_API_KEY", None)
-                distance_result = get_distance_duration(pickup, dropoff, api_key)
                 if distance_result:
                     distance_km = distance_result.get('distance_meters', 0) / 1000
                     driver_data['estimated_cost'] = round(
@@ -97,12 +120,31 @@ class RideSearchViewSet(viewsets.ModelViewSet):
                     )
                 else:
                     driver_data['estimated_cost'] = None
+
+            return driver_data
+        
+        try:
+            if booking_type == "single":
+                # Use ThreadPoolExecutor to parallelize API calls
+                with ThreadPoolExecutor(max_workers=8) as executor:
+                    futures = [executor.submit(process_driver, driver) for driver in movers]
+                    for future in as_completed(futures):
+                        try:
+                            search_results.append(future.result())
+                        except Exception as e:
+                            print(f"Error processing driver: {e}")
             else:
-                driver_data['estimated_cost'] = None
+                # reservation booking: no external API, safe to do sequentially
+                for driver in movers:
+                    try:
+                        driver_data = process_driver(driver)
+                        search_results.append(driver_data)
+                    except Exception as e:
+                        print(f"Error processing driver: {e}")
 
-            search_results.append(driver_data)
-
-        # Paginate the list
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            
         page = self.paginate_queryset(search_results)
         if page is not None:
             return self.get_paginated_response(page)
