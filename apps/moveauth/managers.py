@@ -24,7 +24,7 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_active", True)
-        extra_fields.setdefault("account_type", "SYSTEM")
+        extra_fields.setdefault("role", "SYSTEM")
 
         if extra_fields.get("is_staff") is not True:
             raise ValueError("Superuser must have is_staff=True.")
@@ -48,7 +48,7 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_customer", False)
         
         
-        extra_fields.setdefault("account_type", "MOVER")
+        extra_fields.setdefault("role", "MOVER")
 
         return self.create_user(
             email,
@@ -66,7 +66,7 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_mover", False)
         extra_fields.setdefault("is_customer", True)
 
-        extra_fields.setdefault("account_type", "CUSTOMER")
+        extra_fields.setdefault("role", "CUSTOMER")
 
         return self.create_user(
             email,

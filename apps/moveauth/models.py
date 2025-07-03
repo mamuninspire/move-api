@@ -17,7 +17,7 @@ class User(AbstractUser):
         unique=True,
     )
     
-    account_type = models.CharField("Account Type", choices=ACCOUNT_TYPE, default='CUSTOMER')
+    role = models.CharField("Account Type", choices=ACCOUNT_TYPE, default='CUSTOMER')
     is_mover = models.BooleanField(default=False)
     is_customer = models.BooleanField(default=False)
     profile_image = models.ImageField(upload_to='user/profile_images/', blank=True, null=True)

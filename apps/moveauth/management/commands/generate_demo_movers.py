@@ -20,7 +20,7 @@ class Command(BaseCommand):
                 mover = User.objects.create_user(
                     email=user['email'], 
                     password=user['password'], 
-                    account_type="MOVER", 
+                    role="MOVER", 
                     first_name=user['first_name'], 
                     last_name=user['last_name'],
                     dob=user['dob'],
@@ -29,5 +29,6 @@ class Command(BaseCommand):
                 mover.groups.add(group)
                 mover = Mover.objects.create(user=mover)
                 mover.driving_licence_number = user['driving_licence_number']
+                mover.phone_number = user['phone_number']
                 mover.save()
 

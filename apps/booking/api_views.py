@@ -37,8 +37,8 @@ class RideSearchViewSet(viewsets.ModelViewSet):
         # pdb.set_trace()
         # Optionally filter by user or mover, assuming relationships exist
         user = self.request.user
-        account_type = user.account_type
-        if account_type == 'CUSTOMER':
+        role = user.role
+        if role == 'CUSTOMER':
             customer = Customer.objects.get(user=user)
             return RideSearch.objects.filter(customer=customer)
         else:
@@ -119,11 +119,11 @@ class RideRequestToMoverViewSet(viewsets.ModelViewSet):
         # pdb.set_trace()
         # Optionally filter by user or mover, assuming relationships exist
         user = self.request.user
-        account_type = user.account_type
-        if account_type == 'CUSTOMER':
+        role = user.role
+        if role == 'CUSTOMER':
             customer = Customer.objects.get(user=user)
             return RideRequestToMover.objects.filter(ride_search__customer=customer)
-        elif account_type == 'MOVER':
+        elif role == 'MOVER':
             mover = Mover.objects.get(user=user)
             return RideRequestToMover.objects.filter(mover=mover)
     

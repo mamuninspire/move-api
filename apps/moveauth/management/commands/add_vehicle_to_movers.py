@@ -29,5 +29,4 @@ class Command(BaseCommand):
                 if 'delivery' in services:
                     mover.is_parcel_delivery = True
                 
-
                 mover.save()

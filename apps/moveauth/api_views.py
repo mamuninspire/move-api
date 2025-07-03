@@ -20,21 +20,21 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='signup', permission_classes=[AllowAny])
     def signup(self, request):
-        # import pdb; pdb.set_trace()
-        serializer = UserRegistrationSerializer(data=request.data)
+        data= request.data
+        serializer = UserRegistrationSerializer(data=data)
         if serializer.is_valid():
             user = serializer.save()
-            if user.account_type == "CUSTOMER":
+            if user.role == "CUSTOMER":
                 user.is_customer = True
-            elif user.account_type == "MOVER":
+            elif user.role == "MOVER":
                 user.is_mover = True
             
             # Add user to their respective group
             try:
-                group = Group.objects.get(name=user.account_type.capitalize())  # "Customer" or "Mover"
+                group = Group.objects.get(name=user.role.capitalize())  # "Customer" or "Mover"
                 user.groups.add(group)
             except Group.DoesNotExist:
-                group_name = user.account_type.capitalize()
+                group_name = user.role.capitalize()
                 group = Group.objects.create(name=group_name)
                 user.groups.add(group)
             
@@ -42,10 +42,12 @@ class UserViewSet(viewsets.ModelViewSet):
 
             # Create user respective profile Mover/Customer
             try:
-                if user.account_type == "MOVER":
-                    Mover.objects.create(user=user)
-                elif user.account_type == "CUSTOMER":
-                    Customer.objects.create(user=user)
+                if user.role == "MOVER":
+                    new_user = Mover.objects.create(user=user)
+                elif user.role == "CUSTOMER":
+                    new_user = Customer.objects.create(user=user)
+                    new_user.phone_number = data.get("phone")
+                new_user.save()
             except Exception as e:
                 print(e)
 

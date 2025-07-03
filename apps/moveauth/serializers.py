@@ -12,7 +12,7 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
             'email',
             'first_name',
             'last_name',
-            'account_type',
+            'role',
             'is_mover',
             'is_customer',
             'profile_image',
@@ -38,10 +38,11 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('email', 'password', 'account_type', 'is_mover', 'is_customer')
+        fields = ('email', 'password', 'role', 'is_mover', 'is_customer', 'first_name', 'last_name')
 
     def create(self, validated_data):
         password = validated_data.pop('password')
+        print(f"validated_data: {validated_data}")
         user = User(**validated_data)
         user.set_password(password)
         user.save()
@@ -68,7 +69,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             'id': user.id,
             'email': user.email,
             'name': user.get_full_name(),
-            'role': user.account_type,
+            'role': user.role,
             'is_mover': user.is_mover,
             'is_customer': user.is_customer,
             'profile_image': user.profile_image.url if user.profile_image else None,

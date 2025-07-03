@@ -5,6 +5,7 @@ from core.const import FUEL_TYPE, TRANSMISSION_TYPE, SERVICE_STATUS, LICENSE_VER
 from core.models import CommonModel
 from core.utils import document_upload_to, VehicleImageUploadTo
 import uuid
+from phonenumber_field.modelfields import PhoneNumberField
 
 
 User = get_user_model()
@@ -180,7 +181,7 @@ class Mover(models.Model):
     service_area = models.JSONField(default=dict, blank=True, null=True)
     current_location = models.JSONField(default=dict, blank=True, null=True)
     
-    mobile = models.CharField(max_length=20, blank=True, null=True)
+    phone_number = PhoneNumberField(blank=True)
     is_mobile_verified = models.BooleanField(default=False)
     whatsapp = models.CharField(max_length=20, blank=True, null=True)
     is_whatsapp_verified = models.BooleanField(default=False)
