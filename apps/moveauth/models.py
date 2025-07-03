@@ -31,3 +31,9 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+    
+    def get_full_name(self):
+        full_name = super().get_full_name()
+        if not full_name:
+            full_name = self.email
+        return full_name
