@@ -36,6 +36,7 @@ class RideSearch(BookingAbs):
     vehicle_model = models.ForeignKey(VehicleModel, on_delete=models.SET_NULL, null=True)
     eco_ride = models.BooleanField(default=False)
     status = models.CharField(max_length=15, choices=(("new_search", "New Search"), ("send_requesat", "Send Request"), ("accepted", "Accepted"), ("confirmed", "Confirmed"), ("rejected", "Rejected")), default="new_search")
+    
 
     def __str__(self):
         return str(self.id)
@@ -45,13 +46,13 @@ class RideSearch(BookingAbs):
         return self.customer.user
 
     @property
-    def pickup_location_title(self):
-        title = self.pickup_location['title']
+    def pickup_location_name(self):
+        title = self.pickup_location['name']
         return title
     
     @property
-    def dropoff_location_title(self):
-        title = self.dropoff_location['title']
+    def dropoff_location_name(self):
+        title = self.dropoff_location['name']
         return title
 
 
@@ -63,6 +64,8 @@ class RideRequestToMover(models.Model):
     agreed_price = models.DecimalField(max_digits=8, decimal_places=2, default=0.0)
     status = models.CharField(max_length=15, choices=(("pending", "Pending Request"), ("accepted", "Accepted"), ("confirmed", "Confirmed"), ("rejected", "Rejected"), ("expired", "Expired")), default="pending")
     comments = GenericRelation(Comment)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ('ride_search', 'mover')

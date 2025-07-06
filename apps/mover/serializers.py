@@ -90,6 +90,7 @@ class VehicleSummarySerializer(serializers.ModelSerializer):
 class VehicleSerializer(serializers.ModelSerializer):
     make = VehicleMakeSerializer()
     vehicle_type = VehicleTypeSerializer()
+    model = VehicleModelSerializer()
     body_style = VehicleBodyStyleSerializer()
     service_types = ServiceTypeSerializer(many=True)
     vehicle_images = VehicleImagesSerializer(read_only=True)

@@ -14,7 +14,7 @@ from .serializers import (
     ParcelTypeSerializer,
     BookingSerializer
 )
-from apps.mover.models import Mover
+from apps.mover.models import Mover, VehicleType, VehicleModel, VehicleMake
 from apps.customer.models import Customer
 from core.utils import get_distance_duration
 from dotenv import load_dotenv
@@ -84,6 +84,23 @@ class RideSearchViewSet(viewsets.ModelViewSet):
         # pdb.set_trace()
 
         movers = Mover.objects.filter(is_online=True, is_rider=True).select_related("vehicle", "user")
+
+        vehicle_type = data.get("vehicle_type")
+        vehicle_make = data.get("make")
+        vehicle_model = data.get("model")
+
+        if vehicle_type:
+            vt = VehicleType.objects.filter(name__icontains=vehicle_type).first()
+            movers = movers.filter(vehicle__vehicle_type=vt)
+        
+        if vehicle_make:
+            vm = VehicleMake.objects.filter(name__icontains=vehicle_make).first()
+            movers = movers.filter(vehicle__make=vm)
+        
+        if vehicle_model:
+            vmd = VehicleModel.objects.filter(name__icontains=vehicle_model).first()
+            movers = movers.filter(vehicle__model=vmd)
+
         search_results = []
         def process_driver(driver):
             """Process single driver and return data dict"""
@@ -94,7 +111,7 @@ class RideSearchViewSet(viewsets.ModelViewSet):
                 'rating': driver.rating,
                 'phone': driver.get_contact,
                 'license': driver.driving_licence_number,
-                'make': driver.get_vehicle_make.name if driver.get_vehicle_make else None,
+                'make': driver.get_vehicle_make,
                 'model': driver.get_vehicle_model,
                 'color': driver.get_vehicle_color,
                 "vehicle_type": driver.get_vehicle_type,

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import RideSearch, RideRequestToMover, Ride, ParcelDelivery, ParcelType, Booking
 from apps.mover.models import VehicleType, VehicleMake, VehicleModel, Mover
+from apps.mover.serializers import MoverSerializer
 from core.models import Comment  # if your Comment model is located there
 from core.serializers import CommentSerializer
 import pdb
@@ -86,12 +87,35 @@ class RideRequestToMoverSerializer(serializers.ModelSerializer):
     def get_comments(self, obj):
         return [str(comment) for comment in obj.comments.all()]  # Customize as needed
     
+    def to_representation(self, instance):
+        # Start with default representation
+        representation = super().to_representation(instance)
+
+        # Add full nested mover data
+        # representation['mover'] = MoverSerializer(instance.mover).data if instance.mover else None
+
+        # # Add full nested ride_search data
+        # representation['ride_search'] = RideSearchSerializer(instance.ride_search).data if instance.ride_search else None
+
+        representation['createdAt'] = instance.created_at
+        representation['type'] = 'ride'
+        representation['driverName'] = instance.mover.user.get_full_name()
+        representation['estimatedPrice'] = instance.estimated_cost
+        representation['proposedPrice'] = instance.proposed_price
+        representation['pickup'] = instance.ride_search.pickup_location
+        representation['dropoff'] = instance.ride_search.dropoff_location
+        representation['bookingTime'] = instance.ride_search.booking_time
+
+
+        return representation
+    
     def create(self, validated_data):
+        # pdb.set_trace()
         ride_search_id = validated_data.pop('ride_search_id')
         mover_id = validated_data.pop('mover_id')
         comments_text = validated_data.pop('comments', None)
 
-        estimated_cost = validated_data.pop('estimated_cost')
+        estimated_cost = validated_data.get('estimated_cost')
         proposed_price = validated_data.get('proposed_price')
         if proposed_price is None:
             validated_data['proposed_price'] = estimated_cost

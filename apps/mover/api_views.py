@@ -1,4 +1,5 @@
 from rest_framework import viewsets, status
+# from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -57,6 +58,14 @@ class VehicleViewSet(viewsets.ModelViewSet):
         if self.action in ['create', 'update', 'partial_update']:
             return VehicleWriteSerializer
         return VehicleSerializer
+    
+    @action(detail=False, methods=["get"], url_path="metadata")
+    def metadata(self, request):
+        return Response({
+            "vehicle_types": VehicleTypeSerializer(VehicleType.objects.all(), many=True).data,
+            "vehicle_makes": VehicleMakeSerializer(VehicleMake.objects.all(), many=True).data,
+            "vehicle_models": VehicleModelSerializer(VehicleModel.objects.all(), many=True).data,
+        })
     
     @action(detail=False, methods=['get'], url_path='my')
     def my_vehicle(self, request):

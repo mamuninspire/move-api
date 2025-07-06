@@ -73,8 +73,8 @@ class ServiceType(models.Model):
 
 class Vehicle(CommonModel):
     license_plate = models.CharField(max_length=50, unique=True)
-    make = models.ForeignKey(VehicleMake, on_delete=models.CASCADE)
-    model = models.CharField(max_length=50)
+    make = models.ForeignKey(VehicleMake, on_delete=models.SET_NULL, blank=True, null=True)
+    model = models.ForeignKey(VehicleModel, on_delete=models.SET_NULL, blank=True, null=True)
     year = models.PositiveSmallIntegerField(blank=True, null=True)
     color = models.CharField(max_length=30, blank=True, null=True)
     vehicle_type = models.ForeignKey(VehicleType, on_delete=models.SET_NULL, null=True,blank=True)
@@ -113,6 +113,14 @@ class Vehicle(CommonModel):
     @property
     def get_vehicle_type(self):
         return self.vehicle_type.name if self.vehicle_type else None
+    
+    @property
+    def get_vehicle_make(self):
+        return self.make.name if self.make else None
+    
+    @property
+    def get_vehicle_model(self):
+        return self.model.name if self.model else None
 
     
     def get_image_urls(self):
@@ -188,7 +196,7 @@ class Mover(models.Model):
     
     phone_number = PhoneNumberField(blank=True)
     is_mobile_verified = models.BooleanField(default=False)
-    whatsapp = models.CharField(max_length=20, blank=True, null=True)
+    whatsapp = models.CharField(max_length=20, blank=True, null=True) 
     is_whatsapp_verified = models.BooleanField(default=False)
 
     driving_licence_number = models.CharField(max_length=50, null=False, blank=False)
@@ -217,11 +225,11 @@ class Mover(models.Model):
     
     @property
     def get_vehicle_make(self):
-        return self.vehicle.make
+        return self.vehicle.get_vehicle_make
     
     @property
     def get_vehicle_model(self):
-        return self.vehicle.model
+        return self.vehicle.get_vehicle_model
     
     @property
     def get_vehicle_color(self):
