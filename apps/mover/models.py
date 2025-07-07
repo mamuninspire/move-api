@@ -228,6 +228,10 @@ class Mover(models.Model):
         return self.vehicle.get_vehicle_make
     
     @property
+    def driver_name(self):
+        return self.user.get_full_name()
+    
+    @property
     def get_vehicle_model(self):
         return self.vehicle.get_vehicle_model
     

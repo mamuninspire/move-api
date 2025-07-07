@@ -8,6 +8,9 @@ from django.contrib.auth import get_user_model
 from core.const import DURATION_TYPE_CHOICES, DELIVERY_STATUS
 from core.utils import VehicleImageUploadTo, ImageUploadTo
 import uuid
+from django.utils.timezone import now
+from django.utils.dateformat import format
+import datetime
 
 User = get_user_model()
 
@@ -44,6 +47,21 @@ class RideSearch(BookingAbs):
     @property
     def get_user(self):
         return self.customer.user
+    
+    @property
+    def ride_datetime(self):
+        booking_time = self.booking_time
+        if booking_time == 'now':
+            ride_datetime = now().strftime('%b %d, %Y %I:%M %p')
+        else:
+            dt = datetime.datetime.combine(self.pickup_date, self.pickup_time)
+            ride_datetime = dt.strftime('%b %d, %Y %I:%M %p')
+            
+        return ride_datetime
+    
+    @property
+    def customer_name(self):
+        return self.customer.user.get_full_name()
 
     @property
     def pickup_location_name(self):

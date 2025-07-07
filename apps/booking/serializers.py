@@ -99,12 +99,16 @@ class RideRequestToMoverSerializer(serializers.ModelSerializer):
 
         representation['createdAt'] = instance.created_at
         representation['type'] = 'ride'
-        representation['driverName'] = instance.mover.user.get_full_name()
+        representation['driverName'] = instance.mover.driver_name
+        representation['customerName'] = instance.ride_search.customer_name
         representation['estimatedPrice'] = instance.estimated_cost
         representation['proposedPrice'] = instance.proposed_price
         representation['pickup'] = instance.ride_search.pickup_location
         representation['dropoff'] = instance.ride_search.dropoff_location
+        representation['to'] = instance.ride_search.dropoff_location_name
+        representation['from'] = instance.ride_search.pickup_location_name
         representation['bookingTime'] = instance.ride_search.booking_time
+        representation['ride_datetime'] = instance.ride_search.ride_datetime        
 
 
         return representation
@@ -149,9 +153,29 @@ class RideRequestToMoverSerializer(serializers.ModelSerializer):
         return instance
 
 class RideSerializer(serializers.ModelSerializer):
+    booking_request_mover = RideRequestToMoverSerializer()
+    status = serializers.CharField()
+
     class Meta:
         model = Ride
-        fields = '__all__'
+        fields = [
+            'ride_id',
+            'status',
+            'rating',
+            'booking_request_mover',
+        ]
+    
+    def to_representation(self, instance):
+        # Start with default representation
+        representation = super().to_representation(instance)
+        representation['type'] = 'ride'
+        representation['from'] = instance.booking_request_mover.ride_search.pickup_location_name
+        representation['to'] = instance.booking_request_mover.ride_search.dropoff_location_name
+        representation['MOVER'] = instance.booking_request_mover.mover.driver_name
+        representation['ride_datetime'] = instance.booking_request_mover.ride_search.booking_time
+
+        return representation
+
 
 class RideNestedSerializer(serializers.ModelSerializer):
     booking_request_mover = RideRequestToMoverSerializer()

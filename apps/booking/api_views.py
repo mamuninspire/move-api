@@ -187,22 +187,86 @@ class RideRequestToMoverViewSet(viewsets.ModelViewSet):
             return RideRequestToMover.objects.filter(mover=mover)
     
     def perform_create(self, serializer):
-        serializer.save()   
+        serializer.save()
+    
+    @action(detail=False, methods=['patch'], url_path='accept')
+    def accept_ride_request(self, request):
+        # pdb.set_trace()
+        data = self.request.data
+        id = data.get('booking_request_id')
+
+        try:
+            ride_request = RideRequestToMover.objects.get(id=id)
+            ride_request.status = 'accepted'
+            ride_request.save()
+
+            ride_search = ride_request.ride_search
+            ride_search.status = 'accepted'
+            ride_search.save()
+
+        except RideRequestToMover.DoesNotExist:
+            return Response({"detail": "You are not a registered mover."}, status=404)
+
+        return Response({"status": status.HTTP_202_ACCEPTED})
+    
+    @action(detail=False, methods=['patch'], url_path='confirm')
+    def confirm_ride_request(self, request):
+        # pdb.set_trace()
+        data = self.request.data
+        id = data.get('booking_request_id')
+
+        try:
+            ride_request = RideRequestToMover.objects.get(id=id)
+            ride_request.status = 'confirmed'
+            ride_request.agreed_price = ride_request.proposed_price
+            ride_request.save()
+
+            ride_search = ride_request.ride_search
+            ride_search.status = 'confirmed'
+            ride_search.save()
+
+            Ride.objects.create(
+                booking_request_mover=ride_request,
+                status='confirmed'
+            )
+
+            stall_requests = RideRequestToMover.objects.filter(ride_search=ride_search)
+            for req in stall_requests:
+                if req.id != id:
+                    req.status = 'expired'
+                    req.save()
+
+
+            
+        except RideRequestToMover.DoesNotExist:
+            return Response({"detail": "You are not a registered mover."}, status=404)
+
+        return Response({"status": status.HTTP_202_ACCEPTED})
         
 
 class RideViewSet(viewsets.ModelViewSet):
-    queryset = Ride.objects.all()
+    queryset = Ride.objects.select_related(
+        'booking_request_mover__ride_search',
+        'booking_request_mover__mover__user',  # Assuming Mover has OneToOneField to User
+        'booking_request_mover__ride_search__vehicle_type',
+        'booking_request_mover__ride_search__vehicle_make',
+        'booking_request_mover__ride_search__vehicle_model',
+    )
+    
     serializer_class = RideSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        # pdb.set_trace()
         # Assuming you want to restrict based on user
         if not self.request.user or not self.request.user.is_authenticated:
             raise NotAuthenticated("Authentication required to access this endpoint.")
-
-        return Ride.objects.filter(
-            booking_request_mover__ride_search__user=self.request.user
+        
+        rides = Ride.objects.filter(
+            booking_request_mover__ride_search__customer__user=self.request.user
         )
+
+        return rides
         # return RideBooking.objects.filter(booking_request_mover__ride_search__user=self.request.user)
 
 
